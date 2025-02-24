@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Interactive Map of Enriquillo</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            height: 50vh;
+            width: 90%;
+            margin: auto;
+        }
+        #imageGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            padding: 10px;
+            justify-items: center;
+        }
+        .grid-item {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .grid-item:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <h2>Click on a Point to View Media</h2>
+    <div id="map"></div>
+    <h3 id="locationTitle">Select a Location</h3>
+    <div id="imageGrid"></div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([17.8843, -71.1853], 14);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        var apiUrl = "https://script.google.com/macros/s/AKfycbw4wXTy4VhN9zcPdnkp7DvxVfO21byszDir2IlQDaSX4r9Qtd2VWts0zvEC9XGRKwTwZQ/exec"; 
+        
+var locations = [
+    { name: "Peñalba", coords: [17.930879997302558, -71.24029097867492], folder: "Penalba" },
+    { name: "Escuela Básica Peñalva", coords: [17.930879997302558, -71.24029097867492], folder: "School" },
+    { name: "Hospital de Enriquillo", coords: [17.900695063877617, -71.22997631615702], folder: "Hospital" },
+    { name: "Baseball Field", coords: [17.889545962670446, -71.24354637659339], folder: "Baseball" },
+    { name: "Great View", coords: [17.90209721051714, -71.2273603402174], folder: "Town" }
+];
+
+
+        locations.forEach(function(loc) {
+            L.marker(loc.coords).addTo(map)
+                .bindPopup(`<b>${loc.name}</b><br>Tap to view media`)
+                .on('click', function() {
+                    fetchImages(loc.folder);
+                    map.setView(loc.coords, 16);
+                });
+        });
+
+        function fetchImages(folderName) {
+            document.getElementById("locationTitle").innerText = "Loading media...";
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    var media = data[folderName] || [];
+                    var mediaGrid = document.getElementById("imageGrid");
+                    mediaGrid.innerHTML = "";
+
+                    media.forEach(item => {
+                        let mediaElement;
+                        if (item.type === "image") {
+                            mediaElement = document.createElement("img");
+                            mediaElement.src = item.url;
+                            mediaElement.className = "grid-item";
+                            mediaElement.onclick = function () {
+                                window.open(item.url, '_blank');
+                            };
+                        }
+                        mediaGrid.appendChild(mediaElement);
+                    });
+                    document.getElementById("locationTitle").innerText = `Media from ${folderName}`;
+                })
+                .catch(error => console.error("Error fetching media:", error));
+        }
+    </script>
+</body>
+</html>
